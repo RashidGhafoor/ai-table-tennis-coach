@@ -1,0 +1,9 @@
+google-generative-ai>=0.1.0  # replace with actual package name if different
+opencv-python
+mediapipe
+numpy
+pandas
+gradio
+matplotlib
+tqdm
+scikit-learn
