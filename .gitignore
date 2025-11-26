@@ -1,0 +1,38 @@
+# Virtual environments
+.venv/
+venv/
+
+# Python cache / artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+*.egg-info/
+*.egg
+build/
+dist/
+
+# IDE / editor
+.idea/
+.vscode/
+
+# Logs / temp
+*.log
+*.tmp
+.DS_Store
+
+# Project cache directories
+.cache/
+reports/
+*.json.tmp
+
+# Kaggle / notebook artifacts
+**/.ipynb_checkpoints/
+
+# Video artifacts
+*.mp4
+*.avi
+*.mov
+
