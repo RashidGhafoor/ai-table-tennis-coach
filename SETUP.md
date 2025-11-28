@@ -1,6 +1,6 @@
 # Setup Guide
 
-This guide walks through the local-first workflow required for submission. Kaggle notebook instructions remain available at the end for reference.
+This guide walks through the local-first workflow required for submission.
 
 ---
 
@@ -28,14 +28,11 @@ If the Google SDK name differs in your environment, install the package referenc
 
 ## 3. Configure Credentials & Environment
 ```bash
-export GOOGLE_API_KEY="YOUR_GEMINI_KEY"
-# optional overrides
-export COACH_MODEL_NAME="gemini-1.5-flash"
+export GOOGLE_API_KEY="YOUR_GOOGLE_API_KEY"
+export COACH_MODEL_NAME="gemini-2.5-flash-lite"
 export AGENT_LOG_LEVEL=INFO
 export SESSION_STORE_PATH=".cache/session_store.json"
 ```
-
-You can also point `GOOGLE_APPLICATION_CREDENTIALS` to a service-account JSON if preferred.
 
 ---
 
@@ -73,26 +70,11 @@ Use the CLI tool to compute precision/recall/F1 metrics.
 # Synthetic dry-run (no video files needed)
 python scripts/evaluate.py --mock
 
-# Manifest run (provide your own dataset)
-python scripts/evaluate.py --manifest data/eval_manifest.json
-```
-
-Manifest schema:
-```json
-[
-  {
-    "video": "/abs/path/clip.mp4",
-    "expected_issues": ["Racket angle undetected in this sequence"],
-    "user_profile": {"level": "Intermediate"}
-  }
-]
-```
-
 Reports are exported under `reports/`. Each execution also logs macro metrics via the observability layer.
 
 ---
 
-## 7. Troubleshooting Tips
+## 8. Troubleshooting Tips
 - **`import google.generativeai` fails** — ensure the package name in `requirements.txt` matches the SDK release available in your region.
 - **Mediapipe not available** — substitute any keypoint detector that outputs wrist/shoulder joints and plug it into `vision_agent.py`.
 - **Large videos stall** — trim clips to 10–30s or leverage the resume checkbox to reuse cached detections when tweaking parameters.

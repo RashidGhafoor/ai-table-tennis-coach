@@ -13,9 +13,13 @@ from typing import Dict, Any
 
 from agents.vision_agent import analyze_video
 from agents.eval_agent import score_shots
+from agents.insights_agent import generate_insights
 from agents.coach_agent import generate_coaching_plan
+from agents.tool_registry import ToolRegistry
 from services.session_service import InMemorySessionService, SessionRecord
 from utils.observability import log_event, timed_span
+
+TOOL_REGISTRY = ToolRegistry()
 
 
 class AgentOrchestrator:
@@ -57,14 +61,35 @@ class AgentOrchestrator:
             session_id=session_id,
             summary_fields={"detections": len(detections)},
         )
+        tool_context = TOOL_REGISTRY.gather_context(
+            evaluations=evaluations,
+            user_profile=session.user_profile,
+        )
+        with timed_span("insights", session_id=session_id):
+            diagnostics = generate_insights(
+                evaluations,
+                tool_context=tool_context,
+                user_profile=session.user_profile,
+            )
         with timed_span("coaching", session_id=session_id):
-            plan = generate_coaching_plan(evaluations, user_profile=session.user_profile)
-        log_event("coaching_complete", session_id=session_id, llm_used=plan.get("llm_used", False))
+            plan = generate_coaching_plan(
+                evaluations,
+                tool_context=tool_context,
+                insights=diagnostics,
+                user_profile=session.user_profile,
+            )
+        log_event(
+            "coaching_complete",
+            session_id=session_id,
+            llm_used=plan.get("llm_used", False),
+            summary=(plan.get("summary") or "")[:200],
+        )
 
         result = {
             "session_id": session_id,
             "detections_count": len(detections),
             "evaluations": evaluations,
+            "diagnostics": diagnostics,
             "plan": plan,
             "resume_hint": self.session_service.get_resume_hint(session_id),
         }

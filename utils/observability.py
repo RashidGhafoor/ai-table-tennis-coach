@@ -15,19 +15,20 @@ import uuid
 from contextlib import contextmanager
 from typing import Any, Dict, Optional
 
-
 def setup_logging(default_level: int = logging.INFO) -> None:
-    level = os.getenv("AGENT_LOG_LEVEL", default_level)
+    env_level = os.getenv("AGENT_LOG_LEVEL")
+    if env_level:
+        level = getattr(logging, env_level.upper(), default_level)
+    else:
+        level = default_level
     logging.basicConfig(
         level=level,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
     )
 
-
 def log_event(event_type: str, **fields: Any) -> None:
     payload = {"event": event_type, **fields}
     logging.getLogger("agent").info(json.dumps(payload))
-
 
 @contextmanager
 def timed_span(span: str, session_id: Optional[str] = None, **fields: Any):
@@ -46,4 +47,4 @@ def timed_span(span: str, session_id: Optional[str] = None, **fields: Any):
             session_id=session_id,
             **fields,
         )
-
+        

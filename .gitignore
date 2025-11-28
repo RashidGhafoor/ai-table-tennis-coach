@@ -28,9 +28,6 @@ dist/
 reports/
 *.json.tmp
 
-# Kaggle / notebook artifacts
-**/.ipynb_checkpoints/
-
 # Video artifacts
 *.mp4
 *.avi

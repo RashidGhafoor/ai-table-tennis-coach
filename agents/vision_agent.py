@@ -1,18 +1,14 @@
 """
 vision_agent.py
 
-Performs frame extraction and lightweight pose/racket detection.
+Performs simple frame extraction and lightweight pose/racket detection.
 Uses OpenCV and Mediapipe (if available). Also exposes a high-level analyze_video()
 function that returns structured detections per frame.
-
-Note: This is a starter implementation with hooks. Replace or augment the pose/racket detection
-with a more accurate model as needed.
 """
 
 import cv2
 import numpy as np
-from pathlib import Path
-from tools.video_tools import extract_frames, compute_angle
+from tools.video_tools import extract_frames
 try:
     import mediapipe as mp
     USE_MEDIAPIPE = True
@@ -25,12 +21,15 @@ def analyze_video(video_path, max_frames=300, frame_stride=3):
     """
     frames = extract_frames(video_path, max_frames=max_frames, frame_stride=frame_stride)
     results = []
-    for i, (ts, img) in enumerate(frames):
-        h, w = img.shape[:2]
-        detection = {'frame_index': i, 'timestamp': ts, 'racket_angle': None, 'keypoints': {}}
-        if USE_MEDIAPIPE:
-            mp_pose = mp.solutions.pose
-            with mp_pose.Pose(static_image_mode=True) as pose:
+    pose = None
+    if USE_MEDIAPIPE:
+        mp_pose = mp.solutions.pose
+        pose = mp_pose.Pose(static_image_mode=True)
+    try:
+        for i, (ts, img) in enumerate(frames):
+            h, w = img.shape[:2]
+            detection = {'frame_index': i, 'timestamp': ts, 'racket_angle': None, 'keypoints': {}}
+            if pose:
                 img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                 res = pose.process(img_rgb)
                 if res.pose_landmarks:
@@ -46,14 +45,17 @@ def analyze_video(video_path, max_frames=300, frame_stride=3):
                         'left_hip': (landmarks[23].x * w, landmarks[23].y * h),
                         'right_hip': (landmarks[24].x * w, landmarks[24].y * h),
                     }
-        # Racket angle proxy: detect largest edge direction in near-wrist area (simple heuristic)
-        racket_angle = None
-        try:
-            racket_angle = compute_racket_angle(img, detection.get('keypoints', {}))
-        except Exception:
+            # Racket angle proxy: detect largest edge direction in near-wrist area (simple heuristic)
             racket_angle = None
-        detection['racket_angle'] = racket_angle
-        results.append(detection)
+            try:
+                racket_angle = compute_racket_angle(img, detection.get('keypoints', {}))
+            except Exception:
+                racket_angle = None
+            detection['racket_angle'] = racket_angle
+            results.append(detection)
+    finally:
+        if pose:
+            pose.close()
     return results
 
 def compute_racket_angle(img, keypoints):

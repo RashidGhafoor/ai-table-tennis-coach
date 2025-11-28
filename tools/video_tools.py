@@ -11,7 +11,12 @@ from typing import List, Tuple
 
 def extract_frames(video_path, max_frames=300, frame_stride=3):
     """Yield (timestamp_seconds, image_bgr) tuples for frames sampled from the video."""
-    cap = cv2.VideoCapture(str(video_path))
+    path = Path(video_path)
+    if not path.exists():
+        raise FileNotFoundError(f"Video path does not exist: {video_path}")
+    cap = cv2.VideoCapture(str(path))
+    if not cap.isOpened():
+        raise ValueError(f"Unable to open video: {video_path}")
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     frames = []
     idx = 0

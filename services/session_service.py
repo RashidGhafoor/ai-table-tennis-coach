@@ -19,7 +19,6 @@ from typing import Any, Dict, List, Optional
 
 DEFAULT_STORE = Path(os.getenv("SESSION_STORE_PATH", ".cache/session_store.json"))
 
-
 @dataclass
 class SessionRecord:
     session_id: str
@@ -28,7 +27,6 @@ class SessionRecord:
     last_result: Optional[Dict[str, Any]] = None
     created_at: float = field(default_factory=time.time)
     updated_at: float = field(default_factory=time.time)
-
 
 class InMemorySessionService:
     def __init__(self, *, store_path: Path = DEFAULT_STORE, autosave: bool = True) -> None:

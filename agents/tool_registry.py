@@ -12,11 +12,6 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 import statistics
 
-try:  # pragma: no cover - optional dependency is only needed for Gemini tool specs
-    from google.genai import types as genai_types
-except Exception:  # pragma: no cover
-    genai_types = None
-
 
 class BaseTool:
     """Minimal tool interface inspired by MCP tool contracts."""
@@ -24,24 +19,8 @@ class BaseTool:
     name: str = ""
     description: str = ""
 
-    def run(self, **kwargs) -> Dict[str, Any]:
+    def run(self, **kwargs) -> Dict[str, object]:
         raise NotImplementedError
-
-    def _parameters_schema(self):  # pragma: no cover - subclasses override
-        raise NotImplementedError
-
-    def function_declaration(self):
-        if genai_types is None:
-            return None
-        parameters = self._parameters_schema()
-        if parameters is None:
-            return None
-        return genai_types.FunctionDeclaration(
-            name=self.name,
-            description=self.description,
-            parameters=parameters,
-        )
-
 
 class TechniqueBreakdownTool(BaseTool):
     name = "technique_breakdown"
@@ -70,22 +49,6 @@ class TechniqueBreakdownTool(BaseTool):
             "top_issues": [{"issue": issue, "count": count} for issue, count in top_issues],
             "frames_analyzed": sum(len(e.get("frames", [])) for e in evaluations),
         }
-
-    def _parameters_schema(self):
-        if genai_types is None:
-            return None
-        return genai_types.Schema(
-            type=genai_types.Type.OBJECT,
-            properties={
-                "evaluations": genai_types.Schema(
-                    type=genai_types.Type.ARRAY,
-                    description="List of evaluation dicts with score, issues, and suggestions.",
-                    items=genai_types.Schema(type=genai_types.Type.OBJECT),
-                )
-            },
-            required=["evaluations"],
-        )
-
 
 class DrillLookupTool(BaseTool):
     name = "drill_lookup"
@@ -136,25 +99,6 @@ class DrillLookupTool(BaseTool):
             ]
         return {"issue": issue, "skill_level": skill_level, "drills": matches}
 
-    def _parameters_schema(self):
-        if genai_types is None:
-            return None
-        return genai_types.Schema(
-            type=genai_types.Type.OBJECT,
-            properties={
-                "issue": genai_types.Schema(
-                    type=genai_types.Type.STRING,
-                    description="Issue to search drills for.",
-                ),
-                "skill_level": genai_types.Schema(
-                    type=genai_types.Type.STRING,
-                    description="Optional user skill level for personalization.",
-                ),
-            },
-            required=["issue"],
-        )
-
-
 @dataclass
 class ToolRegistry:
     tools: List[BaseTool] = field(default_factory=list)
@@ -165,18 +109,6 @@ class ToolRegistry:
                 TechniqueBreakdownTool(),
                 DrillLookupTool(),
             ]
-
-    @property
-    def schemas(self) -> List[Any]:
-        """Return google.genai Tool definitions for Gemini."""
-        if genai_types is None:
-            return []
-        declarations = []
-        for tool in self.tools:
-            decl = tool.function_declaration()
-            if decl:
-                declarations.append(decl)
-        return [genai_types.Tool(function_declarations=[decl]) for decl in declarations]
 
     def invoke(self, name: str, **kwargs) -> Dict[str, Any]:
         for tool in self.tools:

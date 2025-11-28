@@ -12,11 +12,15 @@ def score_shots(detections, user_metadata=None):
     Returns [{'shot_id': int, 'score': float, 'issues': [...], 'suggestions': [...]}, ...]
     """
     shots = []
-    # naive grouping: every N frames -> a shot (for demo). Replace with actual shot detection logic.
+    # naive grouping: every N frames -> a shot.
     group_size = 10
     for i in range(0, len(detections), group_size):
         block = detections[i:i+group_size]
-        avg_angle = np.nanmean([d['racket_angle'] or np.nan for d in block])
+        angles = []
+        for d in block:
+            angle = d.get('racket_angle')
+            angles.append(angle if angle is not None else np.nan)
+        avg_angle = np.nanmean(angles) if angles else np.nan
         issues = []
         suggestions = []
         score = 100.0
